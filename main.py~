@@ -1,0 +1,329 @@
+import pygame
+import random
+import sys
+import time
+
+pygame.init()
+pygame.mixer.init()
+
+# Константы
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+FPS = 60
+ENEMY_SIZE = 64  # Предполагаемый размер метеорита
+PLAYER_SIZE = 64  # Предполагаемый размер космического корабля
+SPEED = 5
+STAR_COUNT = 100  # Количество звёзд на фоне
+BACKGROUND_COLOR = (0, 0, 0)
+
+# Загрузка изображений и звуков
+spaceship_image = pygame.image.load('spaceship.png')
+meteor_image = pygame.image.load('meteor.png')
+hit_sound = pygame.mixer.Sound("hit.wav")
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Space Survival Game")
+clock = pygame.time.Clock()
+
+font = pygame.font.SysFont(None, 36)
+
+class Player:
+    def __init__(self):
+        self.position = [SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2]
+        self.image = pygame.transform.scale(spaceship_image, (PLAYER_SIZE, PLAYER_SIZE))
+
+    def draw(self):
+        screen.blit(self.image, self.position)
+
+    def move(self, direction):
+        if direction == "LEFT" and self.position[0] > 0:
+            self.position[0] -= SPEED
+        if direction == "RIGHT" and self.position[0] < SCREEN_WIDTH - PLAYER_SIZE:
+            self.position[0] += SPEED
+        if direction == "UP" and self.position[1] > 0:
+            self.position[1] -= SPEED
+        if direction == "DOWN" and self.position[1] < SCREEN_HEIGHT - PLAYER_SIZE:
+            self.position[1] += SPEED
+
+class Enemy:
+    def __init__(self):
+        self.position = [random.randint(0, SCREEN_WIDTH - ENEMY_SIZE), 0]
+        self.image = pygame.transform.scale(meteor_image, (ENEMY_SIZE, ENEMY_SIZE))
+
+    def draw(self):
+        screen.blit(self.image, self.position)
+
+    def update(self):
+        self.position[1] += SPEED
+
+class Game:
+    def __init__(self):
+        self.player = Player()
+        self.enemies = []
+        self.hits = 0  # Счетчик попаданий
+        self.stars = [(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)) for _ in range(STAR_COUNT)]
+
+    def run(self):
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                self.player.move("LEFT")
+            if keys[pygame.K_RIGHT]:
+                self.player.move("RIGHT")
+            if keys[pygame.K_UP]:
+                self.player.move("UP")
+            if keys[pygame.K_DOWN]:
+                self.player.move("DOWN")
+
+            self.add_enemy()
+            self.update_enemies()
+            self.draw()
+            self.display_score()
+
+            if self.check_collision():
+                self.hits += 1
+                hit_sound.play()
+                if self.hits >= 5:
+                    game_over = font.render('Game Over!', True, (255, 255, 255))
+                    screen.blit(game_over, (330, 300))
+                    pygame.display.flip()
+                    hit_sound.play()
+                    time.sleep(2)
+                    pygame.quit()
+                    sys.exit()
+
+            pygame.display.flip()
+            clock.tick(FPS)
+
+    def add_enemy(self):
+        if random.randint(1, 20) == 1:
+            self.enemies.append(Enemy())
+
+    def update_enemies(self):
+        for enemy in self.enemies[:]:
+            enemy.update()
+            if enemy.position[1] > SCREEN_HEIGHT:
+                self.enemies.remove(enemy)
+
+    def draw(self):
+        screen.fill(BACKGROUND_COLOR)
+        for x, y in self.stars:
+            pygame.draw.circle(screen, (255, 255, 255), (x, y), 1)
+        self.player.draw()
+        for enemy in self.enemies:
+            enemy.draw()
+
+    def display_score(self):
+        score_text = font.render(f'Score: {self.hits}', True, (255, 255, 255))
+        screen.blit(score_text, (10, 10))
+
+    def check_collision(self):
+        player_rect = pygame.Rect(self.player.position[0], self.player.position[1], PLAYER_SIZE, PLAYER_SIZE)
+        for enemy in self.enemies:
+            enemy_rect = pygame.Rect(enemy.position[0], enemy.position[1], ENEMY_SIZE, ENEMY_SIZE)
+            if player_rect.colliderect(enemy_rect):
+                self.enemies.remove(enemy)
+                return True
+        return False
+
+if __name__ == "__main__":
+    game = Game()
+    game.run()
+
+
+
+
+
+
+
+# import pygame
+# import random
+# import sys
+# import time
+#
+# pygame.init()
+#
+# # Константы
+# SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+# FPS = 60
+# ENEMY_SIZE = 20
+# PLAYER_SIZE = 20
+# PLAYER_COLOR = (0, 255, 0)
+# ENEMY_COLOR = (255, 0, 0)
+# BACKGROUND_COLOR = (0, 0, 0)
+# SPEED = 5
+#
+# # Загрузка звука
+# hit_sound = pygame.mixer.Sound("hit.wav")
+#
+# screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+# pygame.display.set_caption("Survival Game")
+# clock = pygame.time.Clock()
+#
+# font = pygame.font.SysFont(None, 36)
+#
+# class Player:
+#     def __init__(self):
+#         self.position = [SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2]
+#         self.size = PLAYER_SIZE
+#         self.color = PLAYER_COLOR
+#
+#     def draw(self):
+#         pygame.draw.rect(screen, self.color, (self.position[0], self.position[1], self.size, self.size))
+#
+#     def move(self, direction):
+#         if direction == "LEFT" and self.position[0] > 0:
+#             self.position[0] -= SPEED
+#         if direction == "RIGHT" and self.position[0] < SCREEN_WIDTH - self.size:
+#             self.position[0] += SPEED
+#         if direction == "UP" and self.position[1] > 0:
+#             self.position[1] -= SPEED
+#         if direction == "DOWN" and self.position[1] < SCREEN_HEIGHT - self.size:
+#             self.position[1] += SPEED
+#
+# class Enemy:
+#     def __init__(self):
+#         self.position = [random.randint(0, SCREEN_WIDTH - ENEMY_SIZE), 0]
+#         self.size = ENEMY_SIZE
+#         self.color = ENEMY_COLOR
+#
+#     def draw(self):
+#         pygame.draw.rect(screen, self.color, (self.position[0], self.position[1], self.size, self.size))
+#
+#     def update(self):
+#         self.position[1] += SPEED
+#
+# class Game:
+#     def __init__(self):
+#         self.player = Player()
+#         self.enemies = []
+#         self.hits = 0  # Счетчик попаданий
+#
+#     def run(self):
+#         while True:
+#             for event in pygame.event.get():
+#                 if event.type == pygame.QUIT:
+#                     pygame.quit()
+#                     sys.exit()
+#
+#             keys = pygame.key.get_pressed()
+#             if keys[pygame.K_LEFT]:
+#                 self.player.move("LEFT")
+#             if keys[pygame.K_RIGHT]:
+#                 self.player.move("RIGHT")
+#             if keys[pygame.K_UP]:
+#                 self.player.move("UP")
+#             if keys[pygame.K_DOWN]:
+#                 self.player.move("DOWN")
+#
+#             self.add_enemy()
+#             self.update_enemies()
+#             self.draw()
+#             self.display_score()
+#
+#             if self.check_collision():
+#                 self.hits += 1
+#                 hit_sound.play()
+#                 if self.hits >= 5:
+#                     game_over = font.render('Game Over!', True, (255, 255, 255))
+#                     screen.blit(game_over, (330, 300))
+#                     pygame.display.flip()
+#                     time.sleep(2)
+#                     # print("Game Over: You hit 10 enemies!")
+#                     pygame.quit()
+#                     sys.exit()
+#
+#             pygame.display.flip()
+#             clock.tick(FPS)
+#
+#     def add_enemy(self):
+#         if random.randint(1, 20) == 1:
+#             self.enemies.append(Enemy())
+#
+#     def update_enemies(self):
+#         for enemy in self.enemies[:]:
+#             enemy.update()
+#             if enemy.position[1] > SCREEN_HEIGHT:
+#                 self.enemies.remove(enemy)
+#
+#     def draw(self):
+#         screen.fill(BACKGROUND_COLOR)
+#         self.player.draw()
+#         for enemy in self.enemies:
+#             enemy.draw()
+#
+#     def display_score(self):
+#         score_text = font.render(f'Score: {self.hits}', True, (255, 255, 255))
+#         screen.blit(score_text, (10, 10))
+#
+#     def check_collision(self):
+#         player_rect = pygame.Rect(self.player.position[0], self.player.position[1], PLAYER_SIZE, PLAYER_SIZE)
+#         for enemy in self.enemies:
+#             enemy_rect = pygame.Rect(enemy.position[0], enemy.position[1], ENEMY_SIZE, ENEMY_SIZE)
+#             if player_rect.colliderect(enemy_rect):
+#                 self.enemies.remove(enemy)
+#                 return True
+#         return False
+#
+# if __name__ == "__main__":
+#     game = Game()
+#     game.run()
+
+
+
+# import pygame
+# import time
+#
+# pygame.init()
+#
+# window_size = (800, 600)
+# screen = pygame.display.set_mode(window_size)
+# pygame.display.set_caption("Тестовый проект")
+#
+# image = pygame.image.load("image.png")
+# image_rect = image.get_rect()
+#
+# image2 = pygame.image.load("image2.png")
+# image_rect2 = image2.get_rect()
+#
+# # speed = 2
+#
+# run = True
+#
+# while run:
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             run = False
+#         if event.type == pygame.MOUSEMOTION:
+#             mouseX, mouseY = pygame.mouse.get_pos()
+#             image_rect.x = mouseX-20
+#             image_rect.y = mouseY-20
+#     image_rect2.x = 250
+#     image_rect2.y = 250
+#
+#     if image_rect.colliderect(image_rect2):
+#         print('Произошло столкновение')
+#         time.sleep(1)
+#
+#
+#     # keys = pygame.key.get_pressed()
+#     #
+#     # if keys[pygame.K_LEFT] and image_rect.x > 0:
+#     #     image_rect.x -= speed
+#     # if keys[pygame.K_RIGHT] and image_rect.x < window_size[0] - image_rect.width:
+#     #     image_rect.x += speed
+#     # if keys[pygame.K_UP] and image_rect.y > 0:
+#     #     image_rect.y -= speed
+#     # if keys[pygame.K_DOWN] and image_rect.y < window_size[1] - image_rect.height:
+#     #     image_rect.y += speed
+#     screen.fill((255, 234, 150))
+#
+#     screen.blit(image2, image_rect2)
+#     screen.blit(image, image_rect)
+#     pygame.display.flip()
+#
+# pygame.quit()
